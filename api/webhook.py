@@ -578,6 +578,9 @@ class handler(BaseHTTPRequestHandler):
             })
 
         except Exception as exc:
+            import traceback
+            print(f"WEBHOOK ERROR: {exc}")
+            print(traceback.format_exc())
             self._respond(500, {"error": str(exc)})
 
     def do_GET(self):

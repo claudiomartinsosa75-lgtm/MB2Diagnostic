@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import ssl
@@ -250,16 +251,16 @@ def score_bar(score: int, color: str) -> str:
 
 
 
-# Logo SVG inline de MB2 (colores exactos del Brand Memory v3.0)
-LOGO_SVG = """<svg viewBox="0 0 280 120" width="210" height="90" xmlns="http://www.w3.org/2000/svg">
-  <line x1="22" y1="60" x2="108" y2="60" stroke="#2e8b57" stroke-opacity="0.75" stroke-width="3" stroke-linecap="square"/>
-  <rect x="4"  y="26" width="36" height="68" rx="11" fill="#7a9a7e"/>
-  <rect x="72" y="26" width="36" height="68" rx="11" fill="#7a9a7e"/>
-  <rect x="38" y="18" width="36" height="84" rx="11" fill="#1e3a2f"/>
-  <text x="152" y="74" font-family="Montserrat,Arial,sans-serif" font-weight="700" font-size="46" fill="#1e3a2f">MB</text>
-  <text x="205" y="46" font-family="Montserrat,Arial,sans-serif" font-weight="700" font-size="28" fill="#b87333">2</text>
-  <text x="150" y="97" font-family="Montserrat,Arial,sans-serif" font-size="7" fill="#8a8680" letter-spacing="3">M A N A G E M E N T   T E A M S</text>
-</svg>"""
+def _load_logo_tag() -> str:
+    logo_path = os.path.join(os.path.dirname(__file__), "..", "public", "logo.png")
+    try:
+        with open(logo_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        return f'<img src="data:image/png;base64,{b64}" alt="MB2 Management Teams" width="200" style="display:block;margin:0 auto;">'
+    except Exception:
+        return '<p style="color:#b87333;font-size:20px;font-family:Montserrat,Arial,sans-serif;font-weight:700;margin:0;">MB² Management Teams</p>'
+
+LOGO_TAG = _load_logo_tag()
 
 
 def build_html_email(nombre: str, results: dict) -> str:
@@ -309,7 +310,7 @@ def build_html_email(nombre: str, results: dict) -> str:
     <!-- CABECERA -->
     <tr>
       <td style="background:#1e3a2f;padding:36px 40px;text-align:center;">
-        {LOGO_SVG}
+        {LOGO_TAG}
         <div style="background:#2e8b57;height:1px;width:60px;margin:20px auto;opacity:0.5;"></div>
         <p style="color:#e8e4dc;font-size:16px;margin:0;letter-spacing:2px;font-family:Montserrat,Arial,sans-serif;font-weight:500;">Pre-Diagnostico Empresarial</p>
         <p style="color:#7a9a7e;font-size:12px;margin:8px 0 0;">{fecha}</p>

@@ -490,6 +490,52 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
         send_via_smtp(to_email, subject, html_body)
 
 
+# ── Mapeo campos Tally → API ───────────────────────────────────────────────────
+
+TALLY_FIELD_MAP = {
+    "Nombre completo":  "nombre",
+    "Email profesional": "email",
+    "¿Tienes un organigrama funcional actualizado con jefes de equipo definidos?": "p1",
+    "¿Cuál es tu tasa de rotación anual aproximada?": "p2",
+    "¿Tienes un plan de formación anual estructurado por puestos?": "p3",
+    "¿Cómo gestionas los horarios y la cobertura de días libres/festivos?": "p4",
+    "¿Tienes protocolos estándar de operación documentados (procesos, pasos, calidad)?": "p5",
+    "¿Cómo se comunican los departamentos o áreas durante la operativa diaria?": "p6",
+    "¿Mides tiempos de ejecución y tienes check-list de calidad?": "p7",
+    "¿Existe un sistema que estructure los servicios/procesos y remunere los logros alcanzados?": "p8",
+    "¿Conoces tu ratio de costes directos de adquisición sobre ingresos?": "p9",
+    "¿Cómo gestionas los pedidos a proveedores o adquisiciones?": "p10",
+    "¿Tienes control de desperdicio, mermas o eficiencia en tus procesos de adquisición/producción?": "p11",
+    "¿Cómo gestionas tu almacén, stock o archivos de recepción?": "p12",
+    "¿Conoces con precisión quién es tu cliente ideal (edad, origen, motivación, gasto)?": "p13",
+    "¿Mides la tasa de clientes repetidores y tienes programa de fidelización?": "p14",
+    "¿Tienes diversificación de perfiles de clientes o dependes de un único tipo?": "p15",
+    "¿Gestionas activamente tu reputación online y encuestas de satisfacción?": "p16",
+    "¿Tienes inventario completo de instalaciones y equipos con fichas técnicas?": "p17",
+    "¿Tienes plan de mantenimiento preventivo anual programado?": "p18",
+    "¿Cómo gestionas las averías y emergencias técnicas?": "p19",
+    "¿Con qué frecuencia generas información económica?": "p21",
+    "¿Analizas rentabilidad por línea de negocio o servicio?": "p22",
+    "¿Tienes proyección de cash-flow y punto de equilibrio por temporada/período?": "p24",
+    "¿Tus decisiones estratégicas se basan en datos o en intuición?": "p23",
+}
+
+
+def parse_tally_payload(raw: dict) -> dict:
+    fields = raw.get("data", {}).get("fields", [])
+    result = {}
+    for field in fields:
+        label = (field.get("label") or "").strip()
+        value = field.get("value")
+        if isinstance(value, list):
+            texts = [v.get("text", "") if isinstance(v, dict) else str(v) for v in value]
+            value = texts[0] if texts else ""
+        api_key = TALLY_FIELD_MAP.get(label)
+        if api_key and value is not None:
+            result[api_key] = str(value)
+    return result
+
+
 # ── Handler Vercel ─────────────────────────────────────────────────────────────
 
 class handler(BaseHTTPRequestHandler):
@@ -499,6 +545,10 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             raw    = self.rfile.read(length)
             data   = json.loads(raw)
+
+            # Detectar formato webhook de Tally
+            if "data" in data and "fields" in data.get("data", {}):
+                data = parse_tally_payload(data)
 
             nombre = (data.get("nombre") or data.get("name") or "").strip()
             email  = (data.get("email") or "").strip()

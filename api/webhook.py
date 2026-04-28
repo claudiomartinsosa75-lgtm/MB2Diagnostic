@@ -527,8 +527,16 @@ def parse_tally_payload(raw: dict) -> dict:
     for field in fields:
         label = (field.get("label") or "").strip()
         value = field.get("value")
+        options = {opt["id"]: opt["text"] for opt in field.get("options", []) if "id" in opt}
         if isinstance(value, list):
-            texts = [v.get("text", "") if isinstance(v, dict) else str(v) for v in value]
+            texts = []
+            for v in value:
+                if isinstance(v, str) and v in options:
+                    texts.append(options[v])
+                elif isinstance(v, dict):
+                    texts.append(v.get("text", ""))
+                else:
+                    texts.append(str(v))
             value = texts[0] if texts else ""
         api_key = TALLY_FIELD_MAP.get(label)
         if api_key and value is not None:
